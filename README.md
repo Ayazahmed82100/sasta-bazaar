@@ -1,4 +1,4 @@
-# Bazaar — Marketplace Webapp
+# Sasta Bazaar — Marketplace Webapp
 
 Daraz-jaisa multi-vendor marketplace: buyers browse & purchase, sellers list
 products, platform earns a commission on every order.
