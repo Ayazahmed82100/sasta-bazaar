@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller Dashboard — Bazaar</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Ba<span>zaar</span></div>
+    <div class="nav-links">
+      <a href="index.html">Shop</a>
+      <a href="seller-dashboard.html">Sell on Bazaar</a>
+      <a href="admin-dashboard.html">Admin</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero" style="padding-bottom: 20px;">
+    <h1>Apna stall lagayein</h1>
+    <p>Account banayein, products list karein, aur har sale par payout paayein.</p>
+  </div>
+
+  <div id="authPanel" class="panel">
+    <h3 style="margin-bottom: 16px;">Seller Login / Signup</h3>
+    <div class="field"><label>Naam</label><input id="s_name" placeholder="Aapka naam"></div>
+    <div class="field"><label>Email</label><input id="s_email" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input id="s_pass" type="password"></div>
+    <button class="btn btn-saffron" onclick="signup()">Signup as Seller</button>
+    <button class="btn btn-outline" onclick="login()">Login</button>
+  </div>
+
+  <div id="dashboardPanel" style="display:none;">
+    <div class="stat-row" style="margin-bottom: 10px;">
+      <div class="stat"><div class="num" id="productCount">0</div><div class="label">Active listings</div></div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-bottom:16px;">Nayi product add karein</h3>
+      <div class="field"><label>Title</label><input id="p_title"></div>
+      <div class="field"><label>Description</label><textarea id="p_desc" rows="2"></textarea></div>
+      <div class="field"><label>Category</label>
+        <select id="p_cat">
+          <option value="electronics">Electronics</option>
+          <option value="fashion">Fashion</option>
+          <option value="home">Home</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Price (Rs)</label><input id="p_price" type="number"></div>
+      <div class="field"><label>Stock</label><input id="p_stock" type="number"></div>
+      <div class="field"><label>Image URL (optional)</label><input id="p_img"></div>
+      <button class="btn btn-saffron" onclick="addProduct()">List product</button>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-bottom:16px;">Aapki listings</h3>
+      <table>
+        <thead><tr><th>Title</th><th>Category</th><th>Price</th><th>Stock</th></tr></thead>
+        <tbody id="myProducts"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+
+function saveSession(token, userId, role) {
+  localStorage.setItem('bazaar_token', token);
+  localStorage.setItem('bazaar_userId', userId);
+  localStorage.setItem('bazaar_role', role);
+}
+
+async function signup() {
+  const res = await fetch(`${API}/auth/signup`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: document.getElementById('s_name').value,
+      email: document.getElementById('s_email').value,
+      password: document.getElementById('s_pass').value,
+      role: 'seller'
+    })
+  });
+  const data = await res.json();
+  if (res.ok) { saveSession(data.token, data.userId, 'seller'); showDashboard(); }
+  else alert('Error: ' + data.error);
+}
+
+async function login() {
+  const res = await fetch(`${API}/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: document.getElementById('s_email').value, password: document.getElementById('s_pass').value })
+  });
+  const data = await res.json();
+  if (res.ok) { saveSession(data.token, data.userId, data.role); showDashboard(); }
+  else alert('Error: ' + data.error);
+}
+
+function showDashboard() {
+  document.getElementById('authPanel').style.display = 'none';
+  document.getElementById('dashboardPanel').style.display = 'block';
+  loadMyProducts();
+}
+
+async function addProduct() {
+  const token = localStorage.getItem('bazaar_token');
+  const res = await fetch(`${API}/products`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      title: document.getElementById('p_title').value,
+      description: document.getElementById('p_desc').value,
+      category: document.getElementById('p_cat').value,
+      price: parseFloat(document.getElementById('p_price').value),
+      stock: parseInt(document.getElementById('p_stock').value),
+      image_url: document.getElementById('p_img').value
+    })
+  });
+  const data = await res.json();
+  if (res.ok) { loadMyProducts(); ['p_title','p_desc','p_price','p_stock','p_img'].forEach(id => document.getElementById(id).value = ''); }
+  else alert('Error: ' + data.error);
+}
+
+async function loadMyProducts() {
+  const sellerId = localStorage.getItem('bazaar_userId');
+  const res = await fetch(`${API}/products/seller/${sellerId}`);
+  const products = await res.json();
+  document.getElementById('productCount').textContent = products.length;
+  document.getElementById('myProducts').innerHTML = products.map(p =>
+    `<tr><td>${p.title}</td><td>${p.category}</td><td>Rs ${p.price}</td><td>${p.stock}</td></tr>`
+  ).join('');
+}
+
+if (localStorage.getItem('bazaar_token') && localStorage.getItem('bazaar_role') === 'seller') showDashboard();
+</script>
+</body>
+</html>

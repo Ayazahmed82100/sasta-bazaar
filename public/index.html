@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bazaar — Buy &amp; sell anything</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Ba<span>zaar</span></div>
+    <div class="nav-links">
+      <a href="index.html">Shop</a>
+      <a href="seller-dashboard.html">Sell on Bazaar</a>
+      <a href="admin-dashboard.html">Admin</a>
+      <a href="#" id="cartLink">Cart (<span id="cartCount">0</span>)</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <h1>Har cheez, ek jagah — khareedein ya bechein.</h1>
+    <p>Local sellers se seedha kharidari karein, ya apna stall laga kar aaj hi bechna shuru karein.</p>
+    <div class="search-row">
+      <input id="searchInput" placeholder="Kya dhoondh rahe hain?" />
+      <button class="btn btn-saffron" onclick="loadProducts()">Search</button>
+    </div>
+  </div>
+
+  <div class="categories" id="categoryChips">
+    <div class="chip active" data-cat="">Sab</div>
+    <div class="chip" data-cat="electronics">Electronics</div>
+    <div class="chip" data-cat="fashion">Fashion</div>
+    <div class="chip" data-cat="home">Home</div>
+    <div class="chip" data-cat="other">Other</div>
+  </div>
+
+  <div class="grid" id="productGrid">
+    <!-- products injected here -->
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let cart = JSON.parse(localStorage.getItem('bazaar_cart') || '[]');
+updateCartCount();
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    loadProducts();
+  });
+});
+
+async function loadProducts() {
+  const activeChip = document.querySelector('.chip.active');
+  const category = activeChip ? activeChip.dataset.cat : '';
+  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  const url = category ? `${API}/products?category=${encodeURIComponent(category)}` : `${API}/products`;
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = '<div class="empty">Loading…</div>';
+
+  try {
+    const res = await fetch(url);
+    let products = await res.json();
+    if (!Array.isArray(products)) products = [];
+    if (search) products = products.filter(p => p.title.toLowerCase().includes(search));
+
+    if (products.length === 0) {
+      grid.innerHTML = '<div class="empty">Koi product nahi mila. Seller dashboard se sabse pehle listing add karein.</div>';
+      return;
+    }
+
+    grid.innerHTML = products.map(p => `
+      <div class="card cat-${p.category || 'other'}">
+        <img src="${p.image_url || 'https://placehold.co/300x200?text=Bazaar'}" alt="${p.title}">
+        <h3>${p.title}</h3>
+        <div class="price">Rs ${p.price}</div>
+        <div class="seller-tag">Stock: ${p.stock}</div>
+        <button class="btn" onclick="addToCart(${p.id}, '${p.title.replace(/'/g, "\\'")}', ${p.price})">Cart mein daalein</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    grid.innerHTML = '<div class="empty">Products load nahi ho sake. API/D1 binding check karein.</div>';
+  }
+}
+
+function addToCart(id, title, price) {
+  const existing = cart.find(i => i.product_id === id);
+  if (existing) existing.quantity += 1;
+  else cart.push({ product_id: id, title, price, quantity: 1 });
+  localStorage.setItem('bazaar_cart', JSON.stringify(cart));
+  updateCartCount();
+}
+
+function updateCartCount() {
+  document.getElementById('cartCount').textContent = cart.reduce((s, i) => s + i.quantity, 0);
+}
+
+document.getElementById('cartLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (cart.length === 0) { alert('Cart khaali hai.'); return; }
+  const token = localStorage.getItem('bazaar_token');
+  if (!token) { alert('Checkout ke liye pehle login karein (login flow abhi demo mein simplified hai).'); return; }
+
+  const res = await fetch(`${API}/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
+      payment_method: 'jazzcash'
+    })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`Order place ho gaya! Total: Rs ${data.total}, Commission: Rs ${data.commission}. Payment status: ${data.payment_status}`);
+    cart = [];
+    localStorage.setItem('bazaar_cart', '[]');
+    updateCartCount();
+  } else {
+    alert('Error: ' + data.error);
+  }
+});
+
+loadProducts();
+</script>
+</body>
+</html>
