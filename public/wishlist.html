@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wishlist — Sasta Bazaar</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Sasta <span>Bazaar</span></div>
+    <div class="nav-links">
+      <a href="index.html">Shop</a>
+      <a href="orders.html">My Orders</a>
+      <a href="wishlist.html">Wishlist</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="hero" style="padding-bottom:10px;"><h1>Aapki Wishlist</h1></div>
+  <div class="grid" id="wishGrid"></div>
+</div>
+<script>
+const API = '/api';
+async function load() {
+  const userId = localStorage.getItem('bazaar_userId');
+  const grid = document.getElementById('wishGrid');
+  if (!userId) { grid.innerHTML = '<div class="empty">Wishlist dekhne ke liye login karein.</div>'; return; }
+  const res = await fetch(`${API}/wishlist/buyer/${userId}`);
+  const products = await res.json();
+  if (!Array.isArray(products) || products.length === 0) {
+    grid.innerHTML = '<div class="empty">Wishlist khaali hai — home page se products save karein.</div>';
+    return;
+  }
+  grid.innerHTML = products.map(p => `
+    <div class="card cat-${p.category || 'other'}">
+      <img src="${p.image_url || 'https://placehold.co/300x200?text=Sasta+Bazaar'}" alt="${p.title}">
+      <h3>${p.title}</h3>
+      <div class="price">Rs ${p.price}</div>
+    </div>
+  `).join('');
+}
+load();
+</script>
+</body>
+</html>

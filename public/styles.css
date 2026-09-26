@@ -198,3 +198,53 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
   padding: 60px 20px;
   color: var(--muted);
 }
+
+/* --- Footer --- */
+.site-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  padding: 28px 0 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.site-footer a { text-decoration: none; color: var(--muted); }
+.site-footer a:hover { color: var(--ink); }
+
+/* --- Rating stars --- */
+.stars { color: var(--saffron-deep); font-size: 13px; letter-spacing: 1px; }
+.rating-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+/* --- Wishlist heart --- */
+.wish-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+}
+.wish-btn.active { color: var(--brick); border-color: var(--brick); }
+.card { position: relative; }
+
+/* --- Coupon row --- */
+.coupon-row { display: flex; gap: 8px; margin: 10px 0; }
+.coupon-row input { flex: 1; padding: 9px 10px; border: 1px solid var(--border); border-radius: 5px; }
+
+/* --- Status badge --- */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-placed { background: #FBEFD9; color: var(--saffron-deep); }
+.status-shipped { background: #E3EEED; color: var(--teal); }
+.status-delivered { background: #E4F0E0; color: #3C7A2E; }
+.status-cancelled { background: #F6E3E0; color: var(--brick); }

@@ -1,4 +1,4 @@
-# Sasta Bazaar — Marketplace Webapp
+# Bazaar — Marketplace Webapp
 
 Daraz-jaisa multi-vendor marketplace: buyers browse & purchase, sellers list
 products, platform earns a commission on every order.
@@ -61,11 +61,29 @@ token) so the app runs end-to-end. Before going live, replace `makeToken`/
 via `env.JWT_SECRET`), and serve the app only over HTTPS (Pages does this by
 default).
 
+## Updating an already-deployed site (new tables)
+
+This update adds `reviews`, `wishlist`, and `coupons` tables. If your database
+already exists, run **`schema-update-2.sql`** (not the full `schema.sql`) in
+the D1 Console — it only adds the new tables and won't touch your existing
+data:
+```
+npx wrangler d1 execute bazaar-db --file=./schema-update-2.sql
+```
+Then push the updated code to GitHub and redeploy on Cloudflare Pages
+(Settings already has the DB binding, so no need to re-add it).
+
 ## What's built vs. what's next
-- ✅ Buyer marketplace (browse, filter by category, cart, checkout)
+- ✅ Buyer marketplace (browse, filter by category, search, cart, checkout)
 - ✅ Seller signup/login, product listing, "my listings" table
 - ✅ Admin login, sales + commission summary
 - ✅ Commission auto-calculated per order (rate configurable)
+- ✅ Product reviews & star ratings
+- ✅ Wishlist (buyers can save products)
+- ✅ Coupon/discount codes at checkout (sample code: `WELCOME10`)
+- ✅ Order tracking for buyers (My Orders page)
+- ✅ Order management for sellers (update status: placed/shipped/delivered/cancelled)
+- ✅ Policy pages: Privacy Policy, Terms & Conditions, Return/Refund Policy, Shipping Policy
 - ⏳ Real payment gateway call (needs your JazzCash/Easypaisa merchant creds)
-- ⏳ Order status updates (shipped/delivered) — orders table already supports it
 - ⏳ Product images upload (currently a URL field — could wire to Cloudflare R2 later)
+- ⏳ Admin coupon management UI (currently edit via D1 Console directly)

@@ -14,6 +14,8 @@
     <div class="nav-links">
       <a href="index.html">Shop</a>
       <a href="seller-dashboard.html">Sell on Sasta Bazaar</a>
+      <a href="orders.html">My Orders</a>
+      <a href="wishlist.html">Wishlist</a>
       <a href="admin-dashboard.html">Admin</a>
       <a href="#" id="cartLink">Cart (<span id="cartCount">0</span>)</a>
     </div>
@@ -41,11 +43,19 @@
   <div class="grid" id="productGrid">
     <!-- products injected here -->
   </div>
+
+  <div class="site-footer">
+    <a href="privacy-policy.html">Privacy Policy</a>
+    <a href="terms.html">Terms &amp; Conditions</a>
+    <a href="return-policy.html">Return &amp; Refund Policy</a>
+    <a href="shipping-policy.html">Shipping Policy</a>
+  </div>
 </div>
 
 <script>
 const API = '/api';
 let cart = JSON.parse(localStorage.getItem('bazaar_cart') || '[]');
+let wishlistIds = new Set();
 updateCartCount();
 
 document.querySelectorAll('.chip').forEach(chip => {
@@ -56,6 +66,22 @@ document.querySelectorAll('.chip').forEach(chip => {
   });
 });
 
+function starString(avg) {
+  const rounded = Math.round(avg || 0);
+  return '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
+}
+
+async function loadWishlist() {
+  const userId = localStorage.getItem('bazaar_userId');
+  const role = localStorage.getItem('bazaar_role');
+  if (!userId || role !== 'buyer') return;
+  try {
+    const res = await fetch(`${API}/wishlist/buyer/${userId}`);
+    const items = await res.json();
+    wishlistIds = new Set((Array.isArray(items) ? items : []).map(p => p.id));
+  } catch (e) {}
+}
+
 async function loadProducts() {
   const activeChip = document.querySelector('.chip.active');
   const category = activeChip ? activeChip.dataset.cat : '';
@@ -64,6 +90,8 @@ async function loadProducts() {
   const url = category ? `${API}/products?category=${encodeURIComponent(category)}` : `${API}/products`;
   const grid = document.getElementById('productGrid');
   grid.innerHTML = '<div class="empty">Loading…</div>';
+
+  await loadWishlist();
 
   try {
     const res = await fetch(url);
@@ -78,16 +106,59 @@ async function loadProducts() {
 
     grid.innerHTML = products.map(p => `
       <div class="card cat-${p.category || 'other'}">
-        <img src="${p.image_url || 'https://placehold.co/300x200?text=Sasta Bazaar'}" alt="${p.title}">
+        <button class="wish-btn ${wishlistIds.has(p.id) ? 'active' : ''}" onclick="toggleWishlist(${p.id}, this)">${wishlistIds.has(p.id) ? '♥' : '♡'}</button>
+        <img src="${p.image_url || 'https://placehold.co/300x200?text=Sasta+Bazaar'}" alt="${p.title}">
         <h3>${p.title}</h3>
+        <div class="rating-row">
+          <span class="stars">${starString(p.avg_rating)}</span>
+          <span>(${p.review_count || 0})</span>
+        </div>
         <div class="price">Rs ${p.price}</div>
         <div class="seller-tag">Stock: ${p.stock}</div>
         <button class="btn" onclick="addToCart(${p.id}, '${p.title.replace(/'/g, "\\'")}', ${p.price})">Cart mein daalein</button>
+        <button class="btn btn-outline" onclick="rateProduct(${p.id})" style="margin-top:6px;">⭐ Rate karein</button>
       </div>
     `).join('');
   } catch (e) {
     grid.innerHTML = '<div class="empty">Products load nahi ho sake. API/D1 binding check karein.</div>';
   }
+}
+
+async function toggleWishlist(productId, btn) {
+  const token = localStorage.getItem('bazaar_token');
+  const role = localStorage.getItem('bazaar_role');
+  if (!token || role !== 'buyer') { alert('Wishlist ke liye buyer account se login karein.'); return; }
+
+  if (wishlistIds.has(productId)) {
+    await fetch(`${API}/wishlist/${productId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    wishlistIds.delete(productId);
+    btn.textContent = '♡';
+    btn.classList.remove('active');
+  } else {
+    await fetch(`${API}/wishlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ product_id: productId })
+    });
+    wishlistIds.add(productId);
+    btn.textContent = '♥';
+    btn.classList.add('active');
+  }
+}
+
+async function rateProduct(productId) {
+  const token = localStorage.getItem('bazaar_token');
+  if (!token) { alert('Rate karne ke liye login karein.'); return; }
+  const rating = prompt('Rating dein (1 se 5):', '5');
+  if (!rating) return;
+  const comment = prompt('Comment (optional):', '') || '';
+  const res = await fetch(`${API}/reviews`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ product_id: productId, rating: parseInt(rating), comment })
+  });
+  if (res.ok) { alert('Shukriya! Review save ho gaya.'); loadProducts(); }
+  else { const d = await res.json(); alert('Error: ' + d.error); }
 }
 
 function addToCart(id, title, price) {
@@ -106,14 +177,17 @@ document.getElementById('cartLink').addEventListener('click', async (e) => {
   e.preventDefault();
   if (cart.length === 0) { alert('Cart khaali hai.'); return; }
   const token = localStorage.getItem('bazaar_token');
-  if (!token) { alert('Checkout ke liye pehle login karein (login flow abhi demo mein simplified hai).'); return; }
+  if (!token) { alert('Checkout ke liye pehle login karein.'); return; }
+
+  const couponCode = prompt('Coupon code hai to daalein (warna khaali chhod kar OK dabayein):', '');
 
   const res = await fetch(`${API}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({
       items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
-      payment_method: 'jazzcash'
+      payment_method: 'jazzcash',
+      coupon_code: couponCode || undefined
     })
   });
   const data = await res.json();

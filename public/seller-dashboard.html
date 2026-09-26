@@ -64,6 +64,14 @@
         <tbody id="myProducts"></tbody>
       </table>
     </div>
+
+    <div class="panel">
+      <h3 style="margin-bottom:16px;">Aapke Orders</h3>
+      <table>
+        <thead><tr><th>Order #</th><th>Product</th><th>Qty</th><th>Amount</th><th>Status</th><th>Update</th></tr></thead>
+        <tbody id="myOrders"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -105,6 +113,38 @@ function showDashboard() {
   document.getElementById('authPanel').style.display = 'none';
   document.getElementById('dashboardPanel').style.display = 'block';
   loadMyProducts();
+  loadMyOrders();
+}
+
+async function loadMyOrders() {
+  const sellerId = localStorage.getItem('bazaar_userId');
+  const res = await fetch(`${API}/orders/seller/${sellerId}`);
+  const items = await res.json();
+  const statuses = ['placed', 'shipped', 'delivered', 'cancelled'];
+  document.getElementById('myOrders').innerHTML = (Array.isArray(items) ? items : []).map(it => `
+    <tr>
+      <td>#${it.order_id}</td>
+      <td>${it.product_title}</td>
+      <td>${it.quantity}</td>
+      <td>Rs ${it.line_total}</td>
+      <td><span class="status-badge status-${it.order_status}">${it.order_status}</span></td>
+      <td>
+        <select onchange="updateOrderStatus(${it.order_id}, this.value)">
+          ${statuses.map(s => `<option value="${s}" ${s === it.order_status ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function updateOrderStatus(orderId, status) {
+  const token = localStorage.getItem('bazaar_token');
+  await fetch(`${API}/orders/${orderId}/status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ order_status: status })
+  });
+  loadMyOrders();
 }
 
 async function addProduct() {
