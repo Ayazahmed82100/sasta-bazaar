@@ -81,3 +81,7 @@ CREATE TABLE coupons (
 
 -- A sample welcome coupon (10% off) — change or delete anytime
 INSERT INTO coupons (code, discount_percent, active) VALUES ('WELCOME10', 10, 1);
+-- Run this in the D1 Console — adds a field so sellers can show a
+-- crossed-out original price (discount badge), Daraz-style.
+
+ALTER TABLE products ADD COLUMN compare_at_price REAL;

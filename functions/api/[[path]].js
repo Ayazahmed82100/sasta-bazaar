@@ -76,12 +76,12 @@ export async function onRequest(context) {
     if (path === "products" && request.method === "POST") {
       const auth = readToken(request);
       if (!auth || auth.role !== "seller") return json({ error: "Sellers only" }, 403);
-      const { title, description, category, price, stock, image_url } = await request.json();
+      const { title, description, category, price, compare_at_price, stock, image_url } = await request.json();
       const result = await db
         .prepare(
-          "INSERT INTO products (seller_id, title, description, category, price, stock, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
+          "INSERT INTO products (seller_id, title, description, category, price, compare_at_price, stock, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        .bind(auth.userId, title, description, category, price, stock, image_url)
+        .bind(auth.userId, title, description, category, price, compare_at_price || null, stock, image_url)
         .run();
       return json({ productId: result.meta.last_row_id });
     }

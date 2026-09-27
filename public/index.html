@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sasta Bazaar — Buy &amp; sell anything</title>
 <link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B2E2A">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
 
@@ -23,16 +26,67 @@
 </div>
 
 <div class="container">
-  <div class="hero">
-    <h1>Har cheez, ek jagah — khareedein ya bechein.</h1>
-    <p>Local sellers se seedha kharidari karein, ya apna stall laga kar aaj hi bechna shuru karein.</p>
-    <div class="search-row">
-      <input id="searchInput" placeholder="Kya dhoondh rahe hain?" />
-      <button class="btn btn-saffron" onclick="loadProducts()">Search</button>
+
+  <div class="search-row" style="margin-top:20px; max-width:100%;">
+    <input id="searchInput" placeholder="Kya dhoondh rahe hain?" />
+    <button class="btn btn-saffron" onclick="loadProducts()">Search</button>
+  </div>
+
+  <div class="banner-carousel" id="bannerCarousel">
+    <div class="banner-slide banner-1 active">
+      <h2>Har cheez, ek jagah.</h2>
+      <p>Local sellers se seedha kharidari — aaj hi shopping shuru karein.</p>
+    </div>
+    <div class="banner-slide banner-2">
+      <h2>Apna stall lagayein</h2>
+      <p>Seller ban kar aaj hi apni products list karein aur kamana shuru karein.</p>
+      <a href="seller-dashboard.html" class="btn">Sell Now</a>
+    </div>
+    <div class="banner-slide banner-3">
+      <h2>WELCOME10 use karein</h2>
+      <p>Pehle order par 10% discount — checkout par coupon code daalein.</p>
+    </div>
+    <div class="banner-dots">
+      <div class="banner-dot active" data-i="0"></div>
+      <div class="banner-dot" data-i="1"></div>
+      <div class="banner-dot" data-i="2"></div>
     </div>
   </div>
 
-  <div class="categories" id="categoryChips">
+  <div class="section-header">
+    <h2>Flash Sale</h2>
+    <span class="tag">Discount par products</span>
+  </div>
+  <div class="flash-strip" id="flashStrip">
+    <div class="empty" style="padding:20px;">Loading…</div>
+  </div>
+
+  <div class="section-header">
+    <h2>Categories</h2>
+  </div>
+  <div class="cat-grid">
+    <div class="cat-tile" data-cat="">
+      <div class="emoji">🛍️</div>
+      <div class="label">Sab</div>
+    </div>
+    <div class="cat-tile" data-cat="electronics">
+      <div class="emoji">📱</div>
+      <div class="label">Electronics</div>
+    </div>
+    <div class="cat-tile" data-cat="fashion">
+      <div class="emoji">👕</div>
+      <div class="label">Fashion</div>
+    </div>
+    <div class="cat-tile" data-cat="home">
+      <div class="emoji">🏠</div>
+      <div class="label">Home</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>Aapke liye</h2>
+  </div>
+  <div class="categories" id="categoryChips" style="display:none;">
     <div class="chip active" data-cat="">Sab</div>
     <div class="chip" data-cat="electronics">Electronics</div>
     <div class="chip" data-cat="fashion">Fashion</div>
@@ -44,11 +98,39 @@
     <!-- products injected here -->
   </div>
 
-  <div class="site-footer">
-    <a href="privacy-policy.html">Privacy Policy</a>
-    <a href="terms.html">Terms &amp; Conditions</a>
-    <a href="return-policy.html">Return &amp; Refund Policy</a>
-    <a href="shipping-policy.html">Shipping Policy</a>
+  <div class="mega-footer">
+    <div class="cols">
+      <div>
+        <h4>Customer Care</h4>
+        <ul>
+          <li><a href="return-policy.html">Returns &amp; Refunds</a></li>
+          <li><a href="shipping-policy.html">Shipping Policy</a></li>
+          <li><a href="orders.html">Track My Order</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Sasta Bazaar</h4>
+        <ul>
+          <li><a href="terms.html">Terms &amp; Conditions</a></li>
+          <li><a href="privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="seller-dashboard.html">Sell on Sasta Bazaar</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <h4>Payment Methods</h4>
+      <div class="payment-row">
+        <span class="payment-chip">JazzCash</span>
+        <span class="payment-chip">Easypaisa</span>
+        <span class="payment-chip">Cash on Delivery</span>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2026 Sasta Bazaar</span>
+      <span>Install the app: browser menu → "Add to Home screen"</span>
+    </div>
   </div>
 </div>
 
@@ -56,13 +138,27 @@
 const API = '/api';
 let cart = JSON.parse(localStorage.getItem('bazaar_cart') || '[]');
 let wishlistIds = new Set();
+let allProducts = [];
 updateCartCount();
 
-document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    loadProducts();
+// Banner carousel
+let bannerIndex = 0;
+const slides = document.querySelectorAll('.banner-slide');
+const dots = document.querySelectorAll('.banner-dot');
+function showBanner(i) {
+  slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+  dots.forEach((d, idx) => d.classList.toggle('active', idx === i));
+  bannerIndex = i;
+}
+dots.forEach(d => d.addEventListener('click', () => showBanner(parseInt(d.dataset.i))));
+setInterval(() => showBanner((bannerIndex + 1) % slides.length), 4000);
+
+// Category tiles (top grid) act like the old chip filter
+document.querySelectorAll('.cat-tile').forEach(tile => {
+  tile.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.cat === tile.dataset.cat));
+    loadProducts(tile.dataset.cat);
+    document.querySelector('.grid').scrollIntoView({ behavior: 'smooth' });
   });
 });
 
@@ -82,9 +178,32 @@ async function loadWishlist() {
   } catch (e) {}
 }
 
-async function loadProducts() {
+function renderFlashSale() {
+  const strip = document.getElementById('flashStrip');
+  const discounted = allProducts.filter(p => p.compare_at_price && p.compare_at_price > p.price);
+  if (discounted.length === 0) {
+    strip.innerHTML = '<div class="empty" style="padding:20px;">Abhi koi discount wali product nahi — sellers "Original price" bhar kar discount dikha sakte hain.</div>';
+    return;
+  }
+  strip.innerHTML = discounted.map(p => {
+    const pct = Math.round((1 - p.price / p.compare_at_price) * 100);
+    return `
+      <div class="flash-card">
+        <img src="${p.image_url || 'https://placehold.co/300x200?text=Sasta+Bazaar'}" alt="${p.title}">
+        <h4>${p.title}</h4>
+        <div class="price-row">
+          <span class="now">Rs ${p.price}</span>
+          <span class="was">Rs ${p.compare_at_price}</span>
+        </div>
+        <span class="discount-badge">-${pct}%</span>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadProducts(categoryOverride) {
   const activeChip = document.querySelector('.chip.active');
-  const category = activeChip ? activeChip.dataset.cat : '';
+  const category = categoryOverride !== undefined ? categoryOverride : (activeChip ? activeChip.dataset.cat : '');
   const search = document.getElementById('searchInput').value.trim().toLowerCase();
 
   const url = category ? `${API}/products?category=${encodeURIComponent(category)}` : `${API}/products`;
@@ -97,6 +216,8 @@ async function loadProducts() {
     const res = await fetch(url);
     let products = await res.json();
     if (!Array.isArray(products)) products = [];
+    allProducts = products;
+    renderFlashSale();
     if (search) products = products.filter(p => p.title.toLowerCase().includes(search));
 
     if (products.length === 0) {
@@ -113,7 +234,10 @@ async function loadProducts() {
           <span class="stars">${starString(p.avg_rating)}</span>
           <span>(${p.review_count || 0})</span>
         </div>
-        <div class="price">Rs ${p.price}</div>
+        <div class="price-row">
+          <span class="now price">Rs ${p.price}</span>
+          ${p.compare_at_price && p.compare_at_price > p.price ? `<span class="was">Rs ${p.compare_at_price}</span>` : ''}
+        </div>
         <div class="seller-tag">Stock: ${p.stock}</div>
         <button class="btn" onclick="addToCart(${p.id}, '${p.title.replace(/'/g, "\\'")}', ${p.price})">Cart mein daalein</button>
         <button class="btn btn-outline" onclick="rateProduct(${p.id})" style="margin-top:6px;">⭐ Rate karein</button>
@@ -122,6 +246,21 @@ async function loadProducts() {
   } catch (e) {
     grid.innerHTML = '<div class="empty">Products load nahi ho sake. API/D1 binding check karein.</div>';
   }
+}
+
+async function rateProduct(productId) {
+  const token = localStorage.getItem('bazaar_token');
+  if (!token) { alert('Rate karne ke liye login karein.'); return; }
+  const rating = prompt('Rating dein (1 se 5):', '5');
+  if (!rating) return;
+  const comment = prompt('Comment (optional):', '') || '';
+  const res = await fetch(`${API}/reviews`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ product_id: productId, rating: parseInt(rating), comment })
+  });
+  if (res.ok) { alert('Shukriya! Review save ho gaya.'); loadProducts(); }
+  else { const d = await res.json(); alert('Error: ' + d.error); }
 }
 
 async function toggleWishlist(productId, btn) {
@@ -144,21 +283,6 @@ async function toggleWishlist(productId, btn) {
     btn.textContent = '♥';
     btn.classList.add('active');
   }
-}
-
-async function rateProduct(productId) {
-  const token = localStorage.getItem('bazaar_token');
-  if (!token) { alert('Rate karne ke liye login karein.'); return; }
-  const rating = prompt('Rating dein (1 se 5):', '5');
-  if (!rating) return;
-  const comment = prompt('Comment (optional):', '') || '';
-  const res = await fetch(`${API}/reviews`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ product_id: productId, rating: parseInt(rating), comment })
-  });
-  if (res.ok) { alert('Shukriya! Review save ho gaya.'); loadProducts(); }
-  else { const d = await res.json(); alert('Error: ' + d.error); }
 }
 
 function addToCart(id, title, price) {
@@ -202,6 +326,10 @@ document.getElementById('cartLink').addEventListener('click', async (e) => {
 });
 
 loadProducts();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+}
 </script>
 </body>
 </html>
