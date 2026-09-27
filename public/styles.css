@@ -255,7 +255,7 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
   border-radius: 8px;
   overflow: hidden;
   margin-top: 20px;
-  height: 160px;
+  min-height: 220px;
 }
 .banner-slide {
   position: absolute;
@@ -263,20 +263,21 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 24px;
+  padding: 28px 24px;
   color: white;
   opacity: 0;
   transition: opacity 0.5s ease;
 }
-.banner-slide.active { opacity: 1; }
-.banner-slide h2 { font-size: 24px; color: white; max-width: 70%; }
-.banner-slide p { font-size: 13px; margin-top: 6px; opacity: 0.9; max-width: 70%; }
-.banner-slide .btn { margin-top: 12px; width: fit-content; background: white; color: var(--ink); }
-.banner-1 { background: linear-gradient(120deg, #1B2E2A, #2F6E62); }
-.banner-2 { background: linear-gradient(120deg, #7A3B1E, #C97F1F); }
-.banner-3 { background: linear-gradient(120deg, #5C2A3A, #B44B3C); }
-.banner-dots { position: absolute; bottom: 10px; left: 24px; display: flex; gap: 6px; }
-.banner-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; }
+.banner-slide.active { opacity: 1; position: relative; }
+.banner-slide:not(.active) { position: absolute; }
+.banner-slide h2 { font-size: 26px; line-height: 1.2; max-width: 78%; color: white; }
+.banner-slide p { font-size: 13.5px; margin-top: 8px; opacity: 0.95; max-width: 78%; line-height: 1.4; }
+.banner-slide .btn { margin-top: 14px; width: fit-content; background: white; color: var(--ink); }
+.banner-1 { background: linear-gradient(120deg, #0F3D33, #2F8F7A); }
+.banner-2 { background: linear-gradient(120deg, #A34E12, #E8A33D); }
+.banner-3 { background: linear-gradient(120deg, #7A1F35, #D9564A); }
+.banner-dots { position: absolute; bottom: 12px; left: 24px; display: flex; gap: 6px; }
+.banner-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; }
 .banner-dot.active { background: white; }
 
 /* --- Section headers --- */
@@ -327,15 +328,19 @@ th { color: var(--muted); font-weight: 500; font-size: 13px; }
   margin-top: 8px;
 }
 .cat-tile {
-  background: var(--paper-raised);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 14px 6px;
+  border: none;
+  border-radius: 10px;
+  padding: 16px 6px;
   text-align: center;
   cursor: pointer;
+  color: white;
 }
-.cat-tile .emoji { font-size: 24px; }
-.cat-tile .label { font-size: 11.5px; margin-top: 6px; color: var(--ink); }
+.cat-tile .emoji { font-size: 26px; }
+.cat-tile .label { font-size: 11.5px; margin-top: 6px; font-weight: 600; }
+.cat-tile[data-cat=""] { background: linear-gradient(135deg, #2F6E62, #1B2E2A); }
+.cat-tile[data-cat="electronics"] { background: linear-gradient(135deg, #2F8F7A, #1B4D42); }
+.cat-tile[data-cat="fashion"] { background: linear-gradient(135deg, #D9564A, #8C2E24); }
+.cat-tile[data-cat="home"] { background: linear-gradient(135deg, #E8A33D, #A96A15); }
 
 /* --- Footer (Daraz-style, multi-column) --- */
 .mega-footer {

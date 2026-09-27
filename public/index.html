@@ -245,6 +245,7 @@ async function loadProducts(categoryOverride) {
     `).join('');
   } catch (e) {
     grid.innerHTML = '<div class="empty">Products load nahi ho sake. API/D1 binding check karein.</div>';
+    document.getElementById('flashStrip').innerHTML = '<div class="empty" style="padding:20px;">Load nahi ho saka.</div>';
   }
 }
 
