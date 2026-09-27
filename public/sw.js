@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sasta-bazaar-v1';
+const CACHE_NAME = 'sasta-bazaar-v2';
 const CORE_ASSETS = [
   '/index.html',
   '/styles.css',
@@ -23,24 +23,24 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-first: always try to get the latest version from the server.
+// Only fall back to the cached copy if the network request fails (offline).
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Never cache API calls — always go to network for fresh data
   if (url.pathname.startsWith('/api/')) return;
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          if (response.ok && event.request.method === 'GET') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
